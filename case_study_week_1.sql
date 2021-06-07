@@ -223,7 +223,37 @@ GROUP BY sales.customer_id;
 
 ---
 -- 10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
+WITH one_week AS(
+  SELECT 
+  join_date,
+  join_date+7 AS first_week,
+  sales.customer_id,
+  sales.product_id,
+  sales.order_date,
+  menu.price,
+  *
+  FROM sales
+  JOIN members
+  ON sales.customer_id=members.customer_id
+  JOIN menu
+  ON sales.product_id=menu.product_id
+)
 
+SELECT 
+customer_id,
+SUM(
+  CASE
+  WHEN (order_date>=join_date AND order_date<=first_week)
+    THEN 20*price 
+  ELSE
+    CASE WHEN product_name='sushi' THEN 20*menu.price
+      ELSE 10*menu.price
+      END
+  END
+)AS points
+FROM one_week
+GROUP BY customer_id
+ORDER BY customer_id;
 -- 11. How total purchases has the customer done?
 
 SELECT
