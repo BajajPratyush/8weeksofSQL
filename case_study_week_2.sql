@@ -117,10 +117,20 @@ VALUES
 SELECT 
  COUNT (order_id) AS no_of_pizza
 FROM pizza_runner.customer_orders;
+
+| no_of_pizza |
+| ----------- |
+| 14          |
+
 --2.  How many unique customer orders were made?
 SELECT 
  COUNT (DISTINCT customer_id) AS no_of_cutomers
 FROM pizza_runner.customer_orders;
+
+| no_of_cutomers |
+| -------------- |
+| 5              |
+
 --3.  How many successful orders were delivered by each runner?
 SELECT 
 runner_id,
@@ -132,21 +142,98 @@ SUM(
 FROM pizza_runner.runner_orders
 GROUP BY runner_id
 ORDER BY runner_id;
+
+| runner_id | sum |
+| --------- | --- |
+| 1         | 4   |
+| 2         | 3   |
+| 3         | 1   |
+
 --4.  How many of each type of pizza was delivered?
 SELECT
- pizza_id,
- COUNT(pizza_id) number_of_pizza 
+ pizza_name,
+ COUNT(customer_orders.pizza_id) AS number_of_pizza 
  FROM pizza_runner.customer_orders
- GROUP BY pizza_id
- ORDER BY pizza_id;
+ JOIN pizza_runner.runner_orders
+ ON runner_orders.order_id=customer_orders.order_id
+  JOIN pizza_runner.pizza_names
+ ON customer_orders.pizza_id=pizza_names.pizza_id
+ WHERE cancellation='' OR cancellation='null' OR cancellation IS NULL
+GROUP BY pizza_names.pizza_name;
+
+| pizza_name | number_of_pizza |
+| ---------- | --------------- |
+| Meatlovers | 9               |
+| Vegetarian | 3               |
+
 --5.  How many Vegetarian and Meatlovers were ordered by each customer?
+SELECT 
+customer_id,
+SUM (
+  CASE WHEN pizza_id='1'
+  THEN 1 ELSE 0
+  END
+  )AS meatlovers_pizza,
+  SUM(
+    CASE WHEN pizza_id='2'
+    THEN 1 ELSE 0
+    END
+    )AS vegetarian_pizza
+  FROM pizza_runner.customer_orders
+  GROUP BY customer_id
+  ORDER BY customer_id;
+
+| customer_id | meatlovers_pizza | vegetarian_pizza |
+| ----------- | ---------------- | ---------------- |
+| 101         | 2                | 1                |
+| 102         | 2                | 1                |
+| 103         | 3                | 1                |
+| 104         | 3                | 0                |
+| 105         | 0                | 1                |
 
 --6.  What was the maximum number of pizzas delivered in a single order?
+SELECT 
+ order_id,
+ count(order_id)As number_of_max_pizzas
+ FROM pizza_runner.customer_orders
+ GROUP BY order_id
+ ORDER BY number_of_max_pizzas desc
+ LIMIT 1;
+ 
+| order_id | number_of_max_pizzas |
+| -------- | -------------------- |
+| 4        | 3                    |
 
 --7.  For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
+SELECT 
+ customer_id,
+ COUNT(*)AS no_changes
+ FROM pizza_runner.customer_orders
+ WHERE (exclusions='' OR exclusions = 'null' OR exclusions IS NULL) AND (extras='' OR extras='null')
+ GROUP BY customer_id;
+ 
+ SELECT 
+ customer_id,
+ COUNT(*)AS changes_on_pizza
+ FROM pizza_runner.customer_orders
+ WHERE (exclusions<>'' AND exclusions <> 'null' AND exclusions IS NOT NULL) OR (extras<>'' AND extras<>'null')
+ GROUP BY customer_id;
+
+ | customer_id | no_changes |
+| ----------- | ---------- |
+| 101         | 3          |
+| 102         | 2          |
+| 104         | 1          |
+
+| customer_id | changes_on_pizza |
+| ----------- | ---------------- |
+| 103         | 4                |
+| 104         | 2                |
+| 105         | 1                |
 
 --8.  How many pizzas were delivered that had both exclusions and extras?
 
 --9.  What was the total volume of pizzas ordered for each hour of the day?
 
 --10. What was the volume of orders for each day of the week?
+
